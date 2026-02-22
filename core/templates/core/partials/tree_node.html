@@ -1,0 +1,27 @@
+<!-- templates/core/partials/tree_node.html -->
+{% load core_tags %}
+
+<div class="tree-node-container mb-0.5" data-id="{{ node.id }}">
+    <div class="tree-node flex items-center gap-1 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer"
+         data-id="{{ node.id }}"
+         data-type-id="{{ node.object_type.id }}">
+        {% if node.children.all %}
+        <span class="toggle-btn w-4 text-center text-gray-400 hover:text-gray-600">
+            <i class="bi {% if expanded %}bi-chevron-down{% else %}bi-chevron-right{% endif %} text-xs"></i>
+        </span>
+        {% else %}
+        <span class="w-4"></span>
+        {% endif %}
+        <i class="bi {{ node.object_type.icon|default:'bi-folder' }} text-gray-500 text-xs"></i>
+        <span class="flex-1 truncate text-sm">{{ node.name }}</span>
+        <span class="text-gray-400 text-xs ml-1">{{ node.object_type.name }}</span>
+    </div>
+
+    {% if node.children.all %}
+    <div class="node-children ml-5 {% if not expanded %}hidden{% endif %}">
+        {% for child in node.children.all %}
+            {% include 'core/partials/tree_node.html' with node=child level=level|add:1 %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

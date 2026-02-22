@@ -1,0 +1,128 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LicenseFlow · Учётная система{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- jsTree CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/themes/default/style.min.css" />
+
+    <!-- Custom Styles -->
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        input, textarea, select { border-radius: 0 !important; }
+
+        .toast-notification {
+            position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white; padding: 12px 24px; border-radius: 0;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 1000;
+            transition: opacity 0.2s; opacity: 0; pointer-events: none;
+        }
+        .toast-notification.show { opacity: 1; pointer-events: auto; }
+
+        .node-children { margin-left: 1.2rem; border-left: 1px dotted #cbd5e1; padding-left: 0.5rem; }
+        .tree-node { font-size: 0.9rem; padding: 0.2rem 0.4rem; border-radius: 0; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tree-node:hover { background-color: #f1f5f9; }
+        .tree-node.selected { background-color: #dbeafe; border: 1px solid #3b82f6; }
+
+        .field-type-badge { font-size: 0.65rem; background: #e2e8f0; padding: 2px 6px; border-radius: 0; margin-left: 6px; }
+        .admin-controls { display: none; }
+        body.admin-mode .admin-controls { display: inline-block; }
+        /* Добавьте в стили */
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu {
+    display: none;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tree-node-container .node-children {
+    transition: all 0.2s ease;
+}
+        .mode-switch { cursor: pointer; padding: 4px 10px; border-radius: 0; font-size: 0.8rem; background: #e2e8f0; }
+        .mode-switch.active { background: #3b82f6; color: white; }
+
+        .type-selector-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 8px; max-height: 300px; overflow-y: auto;
+        }
+        .type-card {
+            border: 1px solid #e2e8f0; border-radius: 0; padding: 12px; cursor: pointer; transition: 0.1s; display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .type-card:hover { background-color: #f8fafc; border-color: #3b82f6; }
+        .type-card.selected { background-color: #dbeafe; border-color: #2563eb; }
+
+        .context-menu {
+            position: absolute; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); z-index: 1000; min-width: 150px;
+        }
+        .context-menu ul { list-style: none; margin: 0; padding: 0; }
+        .context-menu li { padding: 8px 12px; cursor: pointer; }
+        .context-menu li:hover { background-color: #f0f0f0; }
+
+        .tab-button.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+
+        @media (max-width: 768px) {
+            .text-sm { font-size: 0.8rem; }
+            .p-6 { padding: 1rem; }
+            .w-72 { width: 16rem; }
+            .tree-node { font-size: 0.8rem; }
+        }
+
+        .license-preview { max-width: 100px; max-height: 100px; object-fit: contain; margin-top: 5px; }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 50;
+            min-width: 160px;
+        }
+        .dropdown:hover .dropdown-menu { display: block; }
+
+        .search-highlight { background-color: #fef08a; font-weight: bold; }
+        .file-attachment { border: 1px solid #cbd5e1; padding: 4px 8px; margin-top: 4px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 antialiased" id="appBody">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <!-- Тост уведомлений -->
+    <div id="toast" class="toast-notification">Сохранено</div>
+
+    {% block content %}{% endblock %}
+
+    <!-- Глобальные модальные окна будут здесь, но лучше вынести их в отдельные файлы -->
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- jsTree JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js"></script>
+
+    <script>
+        // Глобальная функция показа тоста
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = isError ? '#991b1b' : '#1e293b';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

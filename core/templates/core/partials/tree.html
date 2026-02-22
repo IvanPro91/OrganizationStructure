@@ -1,0 +1,6 @@
+<!-- templates/core/partials/tree.html -->
+{% load core_tags %}
+
+{% for node in roots %}
+    {% include 'core/partials/tree_node.html' with node=node level=0 %}
+{% endfor %}

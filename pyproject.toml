@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "organizationstructure"
+version = "0.1.0"
+description = ""
+authors = ["Ivan <ivan-don4encko@ya.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[tool.poetry.group.dev.dependencies]
+django = "<6"
+python-dotenv = "^1.2.1"
+pillow = "^12.1.1"
+psycopg2-binary = "^2.9.11"
+openpyxl = "^3.1.5"
+
+
+[tool.poetry.group.lint.dependencies]
+black = "^26.1.0"
+isort = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,197 @@
+<!-- templates/core/dashboard.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Гибкий учёт · Полная версия{% endblock %}
+
+{% block content %}
+<div class="flex h-screen overflow-hidden">
+    <!-- левая панель: структура -->
+    <aside class="w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div class="p-4 border-b border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-semibold flex items-center gap-2 text-base">
+                    <i class="bi bi-diagram-3 text-blue-600 text-lg"></i>
+                    Структура организации
+                </h2>
+                <div class="flex items-center gap-2">
+                    <button id="expandAllBtn" class="text-gray-500 hover:text-gray-700" title="Развернуть всё">
+                        <i class="bi bi-arrows-expand"></i>
+                    </button>
+                    <button id="collapseAllBtn" class="text-gray-500 hover:text-gray-700" title="Свернуть всё">
+                        <i class="bi bi-arrows-collapse"></i>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Поиск и фильтр -->
+            <div class="space-y-2">
+                <div class="relative">
+                    <i class="bi bi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <input type="text" id="searchInput" placeholder="Поиск по названию..."
+                           class="w-full border border-gray-300 pl-8 pr-3 py-2 text-xs">
+                </div>
+                <select id="filterType" class="w-full border border-gray-300 px-3 py-2 text-xs">
+                    <option value="">Все типы объектов</option>
+                    {% for type in object_types %}
+                        <option value="{{ type.id }}">{{ type.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="menuTableView" class="bg-white hover:bg-gray-100 border border-gray-300 px-3 py-1.5 text-xs flex items-center gap-1 transition">
+                        <i class="bi bi-arrow-repeat text-blue-600"></i> Таблица
+                    </button>
+                <button id="menuExportExcel" class="bg-white hover:bg-gray-100 border border-gray-300 px-3 py-1.5 text-xs flex items-center gap-1 transition">
+                        <i class="bi bi-arrow-repeat text-blue-600"></i> Экспорт в Excel
+                    </button>
+            </div>
+        </div>
+
+        <!-- Дерево объектов -->
+        <div class="flex-1 overflow-y-auto p-3 text-sm bg-gray-50" id="treeContainer">
+            {% if root_objects %}
+                {% for node in root_objects %}
+                    {% include 'core/partials/tree_node.html' with node=node level=0 %}
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-8">
+                    <i class="bi bi-folder2-open text-gray-300 text-4xl"></i>
+                    <p class="text-gray-500 text-sm mt-2">Нет объектов</p>
+                    <button id="emptyAddBtn" class="mt-3 text-blue-600 text-xs hover:underline">
+                        <i class="bi bi-plus-circle"></i> Создать первый объект
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Кнопка добавления -->
+        <div class="p-3 border-t border-gray-200 bg-gray-50">
+            <button id="addRootBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-2.5 rounded-none flex items-center justify-center gap-2 transition">
+                <i class="bi bi-plus-circle"></i> Добавить корневой объект
+            </button>
+        </div>
+    </aside>
+
+    <!-- основная область: редактор -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+        <!-- Верхнее меню (полноценное) -->
+        <div class="bg-white border-b border-gray-200 shadow-sm">
+            <!-- Главное меню -->
+            <div class="flex items-center px-4 py-1 border-b border-gray-100">
+
+                <!-- Правая часть меню -->
+                <div class="ml-auto flex items-center gap-3">
+                    <span class="text-xs text-gray-500">
+                        <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Панель быстрых действий -->
+            <div class="flex items-center justify-between px-4 py-2 bg-gray-50">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-medium text-gray-500">ТЕКУЩИЙ ОБЪЕКТ:</span>
+                    <span id="selectedObjectPath" class="font-medium text-sm bg-white px-3 py-1 border border-gray-200">—</span>
+                </div>
+                <div class="flex gap-2">
+                    <button id="quickStatusBtn" class="bg-white hover:bg-gray-100 border border-gray-300 px-3 py-1.5 text-xs flex items-center gap-1 transition">
+                        <i class="bi bi-arrow-repeat text-blue-600"></i> Статус
+                    </button>
+                    <button id="quickTransferBtn" class="bg-white hover:bg-gray-100 border border-gray-300 px-3 py-1.5 text-xs flex items-center gap-1 transition">
+                        <i class="bi bi-arrow-left-right text-green-600"></i> Перенести
+                    </button>
+                    <button id="quickPrintBtn" class="bg-white hover:bg-gray-100 border border-gray-300 px-3 py-1.5 text-xs flex items-center gap-1 transition">
+                        <i class="bi bi-printer text-purple-600"></i> Печать акта
+                    </button>
+                    <button id="quickDeleteBtn" class="bg-white hover:bg-red-50 border border-gray-300 px-3 py-1.5 text-xs flex items-center gap-1 transition">
+                        <i class="bi bi-trash text-red-600"></i> Удалить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Редактор объекта -->
+        <div class="flex-1 overflow-y-auto p-6" id="editorPanel">
+            <div class="bg-white shadow-sm border border-gray-200 p-6 max-w-4xl mx-auto">
+                <!-- Заголовок с вкладками -->
+                <div class="flex items-center justify-between mb-6 border-b pb-3">
+                    <div class="flex gap-4">
+                        <button class="tab-editor active text-sm font-medium text-blue-600 border-b-2 border-blue-600 pb-2 px-1" data-tab="properties">
+                            Свойства
+                        </button>
+                        <button class="tab-editor text-sm font-medium text-gray-500 hover:text-gray-700 pb-2 px-1" data-tab="licenses">
+                            Лицензии
+                        </button>
+                        <button class="tab-editor text-sm font-medium text-gray-500 hover:text-gray-700 pb-2 px-1" data-tab="history">
+                            История
+                        </button>
+                        <button class="tab-editor text-sm font-medium text-gray-500 hover:text-gray-700 pb-2 px-1" data-tab="attachments">
+                            Файлы
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Динамические поля -->
+                <div id="dynamicFieldsContainer" class="space-y-4 min-h-[300px]">
+                    <div class="text-center py-12">
+                        <i class="bi bi-arrow-up-left-square text-gray-300 text-4xl"></i>
+                        <p class="text-gray-400 text-sm mt-3">Выберите объект в дереве для редактирования</p>
+                    </div>
+                </div>
+
+                <!-- Кнопка сохранения -->
+                <div class="mt-6 flex justify-end border-t pt-4">
+                    <button id="saveObjectBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-none text-sm flex items-center gap-2 transition">
+                        <i class="bi bi-check2"></i> Сохранить изменения
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Модальные окна -->
+{% include 'core/includes/modals.html' %}
+
+<!-- Контекстное меню -->
+<div id="contextMenu" class="context-menu hidden">
+    <ul>
+        <li id="contextAddChild"><i class="bi bi-plus-square mr-2"></i>Добавить дочерний</li>
+        <li id="contextChangeStatus"><i class="bi bi-arrow-repeat mr-2"></i>Изменить статус</li>
+        <li id="contextTransfer"><i class="bi bi-arrow-left-right mr-2"></i>Перенести</li>
+        <li id="contextDownloadDoc"><i class="bi bi-printer mr-2"></i>Печать акта</li>
+        <li class="border-t my-1"></li>
+        <li id="contextRename"><i class="bi bi-pencil mr-2"></i>Переименовать</li>
+        <li id="contextDelete" class="text-red-600"><i class="bi bi-trash mr-2"></i>Удалить</li>
+    </ul>
+</div>
+
+<!-- Шаблон для узла дерева (для JavaScript) -->
+<template id="tree-node-template">
+    <div class="tree-node-container mb-0.5">
+        <div class="tree-node flex items-center gap-1 py-1 px-1 hover:bg-gray-100 rounded cursor-pointer">
+            <span class="toggle-btn w-4 text-center text-gray-400 hover:text-gray-600">
+                <i class="bi bi-chevron-right text-xs"></i>
+            </span>
+            <i class="bi text-gray-500 text-xs"></i>
+            <span class="flex-1 truncate text-sm"></span>
+            <span class="text-gray-400 text-xs ml-1 type-badge"></span>
+        </div>
+        <div class="node-children ml-5 hidden"></div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Глобальные переменные
+    const USER_ID = {{ user.id|default:'null' }};
+    const IS_ADMIN = {{ user.is_staff|lower|default:'false' }};
+    const CSRF_TOKEN = '{{ csrf_token }}';
+</script>
+<script src="{% static 'js/core/object-manager.js' %}"></script>
+{% endblock %}

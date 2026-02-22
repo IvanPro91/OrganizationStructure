@@ -1,0 +1,93 @@
+{% extends "base_auth.html" %}
+{% load static %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block auth_content %}
+<div class="auth-card w-full max-w-md">
+    <!-- Заголовок -->
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center gap-2 text-xl font-semibold text-gray-800">
+            <i class="bi bi-stack text-blue-600"></i>
+            <span>LicenseFlow</span>
+        </div>
+        <p class="text-sm text-gray-500 mt-1">Регистрация нового пользователя</p>
+    </div>
+
+    <!-- Форма регистрации -->
+    <div class="p-6">
+        <form method="post" action="{% url 'users:register' %}">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-3 py-2 text-sm mb-4">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="space-y-4">
+                <!-- Имя пользователя -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <i class="bi bi-person mr-1"></i> Имя пользователя
+                    </label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <i class="bi bi-envelope mr-1"></i> Email
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Пароль -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <i class="bi bi-lock mr-1"></i> Пароль
+                    </label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.password1.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-gray-500 text-xs mt-1">Минимум 3 символа</p>
+                </div>
+
+                <!-- Подтверждение пароля -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <i class="bi bi-lock mr-1"></i> Подтверждение пароля
+                    </label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.password2.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Согласие с условиями -->
+                <div class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="agree" id="registerAgree" required class="border-gray-300">
+                    <label for="registerAgree" class="text-gray-600">Я принимаю <a href="#" class="text-blue-600 hover:underline">условия использования</a></label>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-medium transition">
+                    <i class="bi bi-person-plus mr-2"></i>Зарегистрироваться
+                </button>
+
+                <div class="text-center text-sm text-gray-500">
+                    Уже есть аккаунт?
+                    <a href="{% url 'users:login' %}" class="text-blue-600 hover:underline">Войти</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

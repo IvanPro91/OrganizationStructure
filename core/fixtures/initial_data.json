@@ -1,0 +1,802 @@
+[
+  {
+    "model": "core.objecttype",
+    "pk": 1,
+    "fields": {
+      "name": "Офис",
+      "icon": "bi-building",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 2,
+    "fields": {
+      "name": "ТОСП",
+      "icon": "bi-shop",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 3,
+    "fields": {
+      "name": "Интернет",
+      "icon": "bi-globe",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 4,
+    "fields": {
+      "name": "Роутер",
+      "icon": "bi-wifi",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 5,
+    "fields": {
+      "name": "Модем",
+      "icon": "bi-hdd-stack",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 6,
+    "fields": {
+      "name": "Сотрудник",
+      "icon": "bi-person",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 7,
+    "fields": {
+      "name": "Компьютер",
+      "icon": "bi-pc-display",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 8,
+    "fields": {
+      "name": "Сервер",
+      "icon": "bi-server",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 9,
+    "fields": {
+      "name": "МФУ",
+      "icon": "bi-printer",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 10,
+    "fields": {
+      "name": "Сканер",
+      "icon": "bi-upc-scan",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 11,
+    "fields": {
+      "name": "Принтер",
+      "icon": "bi-printer",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 12,
+    "fields": {
+      "name": "Координатор",
+      "icon": "bi-people",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 13,
+    "fields": {
+      "name": "Межсетевой экран",
+      "icon": "bi-shield",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 14,
+    "fields": {
+      "name": "POS-терминал",
+      "icon": "bi-credit-card",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 15,
+    "fields": {
+      "name": "IDS",
+      "icon": "bi-shield-check",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 16,
+    "fields": {
+      "name": "Switch",
+      "icon": "bi-diagram-2",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 17,
+    "fields": {
+      "name": "Киоск",
+      "icon": "bi-tv",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objecttype",
+    "pk": 18,
+    "fields": {
+      "name": "Лицензия ПО",
+      "icon": "bi-award",
+      "created_at": "2026-02-19T12:00:00Z"
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 1,
+    "fields": {
+      "object_type": 1,
+      "name": "Адрес",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 2,
+    "fields": {
+      "object_type": 1,
+      "name": "Телефон",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 3,
+    "fields": {
+      "object_type": 2,
+      "name": "Название",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 4,
+    "fields": {
+      "object_type": 2,
+      "name": "Адрес",
+      "field_type": "text",
+      "required": true,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 5,
+    "fields": {
+      "object_type": 2,
+      "name": "Контакты",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 6,
+    "fields": {
+      "object_type": 3,
+      "name": "Провайдер",
+      "field_type": "text",
+      "required": false,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 7,
+    "fields": {
+      "object_type": 3,
+      "name": "Тариф",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 8,
+    "fields": {
+      "object_type": 3,
+      "name": "IP-адрес",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 9,
+    "fields": {
+      "object_type": 3,
+      "name": "Логин",
+      "field_type": "text",
+      "required": false,
+      "order": 4
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 10,
+    "fields": {
+      "object_type": 3,
+      "name": "Пароль",
+      "field_type": "text",
+      "required": false,
+      "order": 5
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 11,
+    "fields": {
+      "object_type": 4,
+      "name": "Модель",
+      "field_type": "text",
+      "required": false,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 12,
+    "fields": {
+      "object_type": 4,
+      "name": "IP-адрес",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 13,
+    "fields": {
+      "object_type": 4,
+      "name": "Прошивка",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 14,
+    "fields": {
+      "object_type": 4,
+      "name": "Серийный номер",
+      "field_type": "text",
+      "required": false,
+      "order": 4
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 15,
+    "fields": {
+      "object_type": 5,
+      "name": "Модель",
+      "field_type": "text",
+      "required": false,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 16,
+    "fields": {
+      "object_type": 5,
+      "name": "IMEI",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 17,
+    "fields": {
+      "object_type": 5,
+      "name": "SIM-карта",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 18,
+    "fields": {
+      "object_type": 6,
+      "name": "ФИО",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 19,
+    "fields": {
+      "object_type": 6,
+      "name": "Должность",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 20,
+    "fields": {
+      "object_type": 6,
+      "name": "Телефон",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 21,
+    "fields": {
+      "object_type": 6,
+      "name": "Email",
+      "field_type": "text",
+      "required": false,
+      "order": 4
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 22,
+    "fields": {
+      "object_type": 7,
+      "name": "Имя ПК",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 23,
+    "fields": {
+      "object_type": 7,
+      "name": "IP-адрес",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 24,
+    "fields": {
+      "object_type": 7,
+      "name": "Версия Windows",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 25,
+    "fields": {
+      "object_type": 7,
+      "name": "Периферия",
+      "field_type": "textarea",
+      "required": false,
+      "order": 4
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 26,
+    "fields": {
+      "object_type": 7,
+      "name": "Установлено",
+      "field_type": "checkbox",
+      "required": false,
+      "order": 5
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 27,
+    "fields": {
+      "object_type": 7,
+      "name": "Инвентарный номер",
+      "field_type": "text",
+      "required": false,
+      "order": 6
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 28,
+    "fields": {
+      "object_type": 8,
+      "name": "Имя сервера",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 29,
+    "fields": {
+      "object_type": 8,
+      "name": "IP-адрес",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 30,
+    "fields": {
+      "object_type": 8,
+      "name": "ОС",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 31,
+    "fields": {
+      "object_type": 8,
+      "name": "Роль",
+      "field_type": "text",
+      "required": false,
+      "order": 4
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 32,
+    "fields": {
+      "object_type": 8,
+      "name": "Установлено",
+      "field_type": "checkbox",
+      "required": false,
+      "order": 5
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 33,
+    "fields": {
+      "object_type": 9,
+      "name": "Модель",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 34,
+    "fields": {
+      "object_type": 9,
+      "name": "Серийный номер",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 35,
+    "fields": {
+      "object_type": 9,
+      "name": "Инвентарный номер",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 36,
+    "fields": {
+      "object_type": 10,
+      "name": "Модель",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 37,
+    "fields": {
+      "object_type": 10,
+      "name": "Серийный номер",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 38,
+    "fields": {
+      "object_type": 11,
+      "name": "Модель",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 39,
+    "fields": {
+      "object_type": 11,
+      "name": "Серийный номер",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 40,
+    "fields": {
+      "object_type": 12,
+      "name": "ФИО",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 41,
+    "fields": {
+      "object_type": 12,
+      "name": "Телефон",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 42,
+    "fields": {
+      "object_type": 13,
+      "name": "Модель",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 43,
+    "fields": {
+      "object_type": 13,
+      "name": "IP-адрес",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 44,
+    "fields": {
+      "object_type": 13,
+      "name": "Прошивка",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 45,
+    "fields": {
+      "object_type": 14,
+      "name": "Модель",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 46,
+    "fields": {
+      "object_type": 14,
+      "name": "Серийный номер",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 47,
+    "fields": {
+      "object_type": 14,
+      "name": "Терминал ID",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 48,
+    "fields": {
+      "object_type": 15,
+      "name": "Модель",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 49,
+    "fields": {
+      "object_type": 15,
+      "name": "Версия ПО",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 50,
+    "fields": {
+      "object_type": 15,
+      "name": "IP-адрес",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 51,
+    "fields": {
+      "object_type": 16,
+      "name": "Модель",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 52,
+    "fields": {
+      "object_type": 16,
+      "name": "Количество портов",
+      "field_type": "number",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 53,
+    "fields": {
+      "object_type": 16,
+      "name": "IP-адрес",
+      "field_type": "text",
+      "required": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 54,
+    "fields": {
+      "object_type": 17,
+      "name": "Местоположение",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 55,
+    "fields": {
+      "object_type": 17,
+      "name": "Серийный номер",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 56,
+    "fields": {
+      "object_type": 18,
+      "name": "Название ПО",
+      "field_type": "text",
+      "required": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 57,
+    "fields": {
+      "object_type": 18,
+      "name": "Номер лицензии",
+      "field_type": "text",
+      "required": false,
+      "order": 2
+    }
+  },
+  {
+    "model": "core.objectfield",
+    "pk": 58,
+    "fields": {
+      "object_type": 18,
+      "name": "Срок действия",
+      "field_type": "datetime",
+      "required": false,
+      "order": 3
+    }
+  }
+]

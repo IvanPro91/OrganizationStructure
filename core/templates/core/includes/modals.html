@@ -1,0 +1,141 @@
+<!-- templates/core/includes/modals.html -->
+<!-- Модальное окно выбора типа при создании -->
+<div id="typeSelectorModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-none shadow-xl w-[500px] max-w-full p-5">
+        <h3 class="text-lg font-medium mb-3" id="typeSelectorTitle">Выберите тип нового объекта</h3>
+        <div id="typeSelectorGrid" class="type-selector-grid mb-4"></div>
+        <div class="flex justify-end gap-3">
+            <button id="cancelTypeSelect" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none text-sm">Отмена</button>
+            <button id="confirmTypeSelect" class="px-4 py-2 bg-blue-600 text-white rounded-none text-sm disabled:opacity-50" disabled>Создать</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления поля -->
+<div id="fieldModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-none shadow-xl w-96 p-5">
+        <h3 class="text-lg font-medium mb-3">Новое поле</h3>
+        <div class="space-y-3">
+            <div>
+                <label class="block text-sm text-gray-600">Название</label>
+                <input id="newFieldName" class="w-full border border-gray-300 shadow-sm px-2 py-1" placeholder="например, Установлено">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600">Тип</label>
+                <select id="newFieldType" class="w-full border border-gray-300 shadow-sm px-2 py-1">
+                    <option value="text">Текст</option>
+                    <option value="number">Число</option>
+                    <option value="datetime-local">Дата и время</option>
+                    <option value="checkbox">Чекбокс (да/нет)</option>
+                    <option value="textarea">Многострочный</option>
+                </select>
+            </div>
+            <div>
+                <label class="flex items-center gap-2 text-sm text-gray-600">
+                    <input type="checkbox" id="newFieldRequired" class="rounded-none"> Обязательное?
+                </label>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-5">
+            <button id="cancelFieldBtn" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none text-sm">Отмена</button>
+            <button id="addFieldConfirm" class="px-4 py-2 bg-blue-600 text-white rounded-none text-sm">Добавить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно настроек -->
+<div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-none shadow-xl w-[600px] max-w-full p-5">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium">Настройки</h3>
+            <button id="closeSettingsBtn" class="text-gray-500 hover:text-gray-700"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="flex border-b mb-4">
+            <button class="tab-button px-4 py-2 border border-gray-200 bg-gray-50 mr-1" data-tab="profile">Профиль</button>
+            <button class="tab-button px-4 py-2 border border-gray-200 bg-gray-50 mr-1" data-tab="organization">Организация</button>
+            <button class="tab-button px-4 py-2 border border-gray-200 bg-gray-50" data-tab="telegram">Уведомления</button>
+        </div>
+        <div id="tabContent">
+            <div class="tab-pane hidden" data-tab="profile">
+                <div class="space-y-3">
+                    <div><label class="block text-sm text-gray-600">Имя пользователя</label><input id="profileName" class="w-full border border-gray-300 px-2 py-1" value="{{ user.get_full_name }}"></div>
+                    <div><label class="block text-sm text-gray-600">Email</label><input id="profileEmail" class="w-full border border-gray-300 px-2 py-1" value="{{ user.email }}"></div>
+                </div>
+            </div>
+            <div class="tab-pane hidden" data-tab="organization">
+                <div class="space-y-3">
+                    <div><label class="block text-sm text-gray-600">Название организации</label><input id="orgName" class="w-full border border-gray-300 px-2 py-1" value="{{ user.organization_name }}"></div>
+                    <div><label class="block text-sm text-gray-600">ИНН</label><input id="orgInn" class="w-full border border-gray-300 px-2 py-1" value="{{ user.organization_inn }}"></div>
+                </div>
+            </div>
+            <div class="tab-pane hidden" data-tab="telegram">
+                <div class="space-y-3">
+                    <div><label class="block text-sm text-gray-600">Telegram ID получателей</label><input id="telegramIds" class="w-full border border-gray-300 px-2 py-1" value="{{ user.telegram_id }}"></div>
+                    <div><label class="block text-sm text-gray-600">Период упреждения (дней)</label><input type="number" id="reminderDays" class="w-full border border-gray-300 px-2 py-1" value="{{ user.notification_days|default:7 }}"></div>
+                    <div><label class="block text-sm text-gray-600">Проверить сейчас</label><button id="checkExpiryBtn" class="bg-blue-600 text-white px-3 py-1 text-sm">Проверить истекающие</button></div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-5">
+            <button id="saveSettingsBtn" class="px-4 py-2 bg-blue-600 text-white rounded-none text-sm">Сохранить</button>
+            <button id="cancelSettingsBtn" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none text-sm">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно выбора статуса -->
+<div id="statusModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-none shadow-xl w-96 p-5">
+        <h3 class="text-lg font-medium mb-3">Изменить статус</h3>
+        <div class="space-y-3">
+            <div>
+                <label class="block text-sm text-gray-600">Новый статус</label>
+                <select id="newStatus" class="w-full border border-gray-300 px-2 py-1">
+                    <option value="working">Работает</option>
+                    <option value="repair">В ремонте</option>
+                    <option value="written_off">Списан</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600">Дата начала</label>
+                <input type="datetime-local" id="statusDate" class="w-full border border-gray-300 px-2 py-1">
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-5">
+            <button id="saveStatusBtn" class="px-4 py-2 bg-blue-600 text-white rounded-none text-sm">Применить</button>
+            <button id="cancelStatusBtn" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none text-sm">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно выбора целевого объекта для переноса -->
+<div id="transferModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-none shadow-xl w-96 p-5">
+        <h3 class="text-lg font-medium mb-3">Перенести объект</h3>
+        <div class="space-y-3">
+            <div>
+                <label class="block text-sm text-gray-600">Выберите нового родителя</label>
+                <select id="newParentSelect" class="w-full border border-gray-300 px-2 py-1">
+                    <option value="">— выберите —</option>
+                </select>
+            </div>
+            <p class="text-xs text-gray-500">Показаны все возможные родительские объекты.</p>
+        </div>
+        <div class="flex justify-end gap-3 mt-5">
+            <button id="saveTransferBtn" class="px-4 py-2 bg-blue-600 text-white rounded-none text-sm">Перенести</button>
+            <button id="cancelTransferBtn" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none text-sm">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-none shadow-xl w-96 p-5">
+        <h3 class="text-lg font-medium mb-3">Подтверждение</h3>
+        <p id="confirmMessage" class="text-sm text-gray-600 mb-5">Вы уверены?</p>
+        <div class="flex justify-end gap-3">
+            <button id="confirmYes" class="px-4 py-2 bg-red-600 text-white rounded-none text-sm">Да</button>
+            <button id="confirmNo" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none text-sm">Отмена</button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Авторизация{% endblock %} · LicenseFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        input, button { border-radius: 0 !important; }
+        .auth-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .tab-button.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .tab-button {
+            transition: all 0.2s;
+        }
+        .toast-notification {
+            position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white; padding: 12px 24px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 1000;
+            transition: opacity 0.2s; opacity: 0; pointer-events: none;
+        }
+        .toast-notification.show { opacity: 1; pointer-events: auto; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <!-- тост для уведомлений -->
+    <div id="toast" class="toast-notification">Сообщение</div>
+
+    {% block auth_content %}{% endblock %}
+
+    <script>
+        // Глобальная функция для тостов
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = isSuccess ? '#1e293b' : '#991b1b';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
