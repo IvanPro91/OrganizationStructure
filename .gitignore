@@ -1,0 +1,6 @@
+000*.py
+.venv
+*.sqlite3
+.env
+deepseek_*.html
+poetry.toml
