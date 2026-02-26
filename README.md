@@ -71,3 +71,12 @@ poetry run python manage.py migrate
 http://127.0.0.1:8000/admin/
 
 ввести данные суперпользователя и управлять проектом.
+
+## Иконки для элементов дерева
+
+Иконки берутся с сайта 
+[getbootstrap](https://getbootstrap.ru/docs/icons/)
+
+берется их название формата
+`bi bi-app`
+для иконки App
