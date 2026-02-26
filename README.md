@@ -57,4 +57,4 @@ poetry run python manage.py migrate
 
 После установки зависимостей ознакомьтесь с файлом README.md внутри проекта — в нём могут быть дополнительные инструкции по запуску и настройке.
 
-`poetry run python main.py`
+`poetry run python manage.py runserver`
