@@ -58,3 +58,16 @@ poetry run python manage.py migrate
 После установки зависимостей ознакомьтесь с файлом README.md внутри проекта — в нём могут быть дополнительные инструкции по запуску и настройке.
 
 `poetry run python manage.py runserver`
+
+## 8. Создание суперпользователя через poetry
+
+`poetry run python manage.py createsuperuser`
+
+или с предустановленными данными
+
+`poetry run python manage.py createsuperuser --username admin`
+
+После успешного выполнения можно выполнить переход
+http://127.0.0.1:8000/admin/
+
+ввести данные суперпользователя и управлять проектом.
