@@ -65,10 +65,18 @@ class OrganizationObject(models.Model):
         verbose_name='Ответственный',
         related_name='owned_objects'
     )
+    order = models.PositiveIntegerField('Порядок сортировки', default=0)
+    is_expanded = models.BooleanField(
+        'Раскрыт',
+        default=False,
+        help_text='True - узел раскрыт, False - узел свернут'
+    )
 
     class Meta:
         verbose_name = 'Объект организации'
         verbose_name_plural = 'Объекты организации'
+        ordering = ['parent__id', 'order', 'name']  # Сортировка по умолчанию
+
 
     def __str__(self):
         return f"{self.name} ({self.object_type.name})"

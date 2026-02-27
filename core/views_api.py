@@ -40,6 +40,9 @@ class TreeAPIView(LoginRequiredMixin, View):
 
     def get(self, request):
         def build_tree(obj):
+            # Сортируем детей по полю order
+            sorted_children = obj.children.all().order_by('order', 'name')
+
             return {
                 'id': obj.id,
                 'name': obj.name,
@@ -47,14 +50,43 @@ class TreeAPIView(LoginRequiredMixin, View):
                 'type_name': obj.object_type.name,
                 'icon': obj.object_type.icon,
                 'status': obj.status,
-                'children': [build_tree(child) for child in obj.children.all()]
+                'order': obj.order,
+                'is_expanded': obj.is_expanded,  # Добавляем состояние раскрытия
+                'children': [build_tree(child) for child in sorted_children]
             }
 
-        roots = OrganizationObject.objects.filter(parent=None).select_related('object_type').prefetch_related(
-            'children')
+        # Сортируем корневые элементы
+        roots = OrganizationObject.objects.filter(
+            parent=None
+        ).select_related('object_type').prefetch_related('children').order_by('order', 'name')
+
         data = [build_tree(root) for root in roots]
         return JsonResponse(data, safe=False)
 
+
+@method_decorator(csrf_exempt, name='dispatch')
+class TreeNodeStateAPIView(LoginRequiredMixin, View):
+    """API для сохранения состояния раскрытия узла"""
+
+    def post(self, request, pk):
+        try:
+            data = json.loads(request.body)
+            is_expanded = data.get('is_expanded', False)
+
+            obj = OrganizationObject.objects.get(pk=pk)
+            obj.is_expanded = is_expanded
+            obj.save(update_fields=['is_expanded'])
+
+            return JsonResponse({
+                'success': True,
+                'id': obj.id,
+                'is_expanded': obj.is_expanded
+            })
+
+        except OrganizationObject.DoesNotExist:
+            return JsonResponse({'error': 'Object not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateObjectAPIView(LoginRequiredMixin, View):
@@ -275,29 +307,80 @@ class UpdateObjectAPIView(LoginRequiredMixin, View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class MoveObjectAPIView(LoginRequiredMixin, View):
-    """API для перемещения объекта"""
+    """API для перемещения объекта с сохранением позиции"""
 
     def post(self, request, pk):
         try:
             data = json.loads(request.body)
             parent_id = data.get('parent_id')
+            old_parent_id = data.get('old_parent_id')
+            new_position = data.get('position')
 
             obj = OrganizationObject.objects.get(pk=pk)
 
-            # Если parent_id = None, перемещаем в корень
-            if parent_id is None:
-                obj.parent = None
-                comment = 'Объект перемещен в корень'
-            else:
-                # Проверяем, что целевой объект существует
-                try:
-                    target = OrganizationObject.objects.get(pk=parent_id)
-                    obj.parent = target
-                    comment = f'Объект перемещен в {target.name}'
-                except OrganizationObject.DoesNotExist:
-                    return JsonResponse({'error': 'Target object not found'}, status=404)
+            # Обработка специальных значений
+            if parent_id in (None, 'null', '#'):
+                parent_id = None
+            if old_parent_id in (None, 'null', '#'):
+                old_parent_id = None
 
-            obj.save()
+            print(f"Moving object {pk}: old_parent={old_parent_id}, new_parent={parent_id}, position={new_position}")
+
+            # Если перемещение внутри того же родителя
+            if old_parent_id == parent_id:
+                # Получаем всех siblings, исключая текущий объект
+                siblings = list(OrganizationObject.objects.filter(
+                    parent_id=parent_id
+                ).exclude(id=obj.id).order_by('order', 'name', 'id'))
+
+                # Вставляем объект на новую позицию
+                siblings.insert(new_position, obj)
+
+                # Перенумеровываем
+                for index, sibling in enumerate(siblings):
+                    if sibling.order != index:
+                        sibling.order = index
+                        sibling.save(update_fields=['order'])
+
+                comment = f'Изменен порядок в пределах {obj.parent.name if obj.parent else "корня"}'
+
+            else:
+                # Перемещение между разными родителями
+                # Сохраняем старый родитель для последующей перенумерации
+                old_parent = obj.parent_id
+
+                # Обновляем родителя
+                if parent_id is None:
+                    obj.parent = None
+                    comment = 'Объект перемещен в корень'
+                else:
+                    try:
+                        target = OrganizationObject.objects.get(pk=parent_id)
+                        obj.parent = target
+                        comment = f'Объект перемещен в {target.name}'
+                    except OrganizationObject.DoesNotExist:
+                        return JsonResponse({'error': 'Target object not found'}, status=404)
+
+                # Сохраняем объект
+                obj.save()
+
+                # Перенумеровываем старого родителя
+                if old_parent is not None:
+                    self.reorder_siblings(old_parent)
+
+                # Получаем siblings нового родителя и вставляем на нужную позицию
+                new_siblings = list(OrganizationObject.objects.filter(
+                    parent_id=parent_id
+                ).exclude(id=obj.id).order_by('order', 'name', 'id'))
+
+                # Вставляем объект на нужную позицию
+                new_siblings.insert(new_position, obj)
+
+                # Перенумеровываем нового родителя
+                for index, sibling in enumerate(new_siblings):
+                    if sibling.order != index:
+                        sibling.order = index
+                        sibling.save(update_fields=['order'])
 
             # Запись в историю
             StatusHistory.objects.create(
@@ -309,7 +392,8 @@ class MoveObjectAPIView(LoginRequiredMixin, View):
 
             return JsonResponse({
                 'status': 'moved',
-                'new_parent_id': parent_id
+                'new_parent_id': parent_id,
+                'new_position': new_position
             })
 
         except OrganizationObject.DoesNotExist:
@@ -318,6 +402,18 @@ class MoveObjectAPIView(LoginRequiredMixin, View):
             import traceback
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
+    def reorder_siblings(self, parent_id):
+        """Перенумеровать порядок сортировки у всех siblings"""
+        siblings = OrganizationObject.objects.filter(parent_id=parent_id).order_by('order', 'name', 'id')
+
+        for index, sibling in enumerate(siblings):
+            if sibling.order != index:
+                sibling.order = index
+                sibling.save(update_fields=['order'])
+
+        print(f"Reordered {siblings.count()} siblings for parent {parent_id}")
+
 
 
 @method_decorator(csrf_exempt, name='dispatch')

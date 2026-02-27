@@ -4,3 +4,4 @@
 .env
 deepseek_*.html
 poetry.toml
+.idea
