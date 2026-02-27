@@ -65,10 +65,18 @@ class OrganizationObject(models.Model):
         verbose_name='Ответственный',
         related_name='owned_objects'
     )
+    order = models.PositiveIntegerField('Порядок сортировки', default=0)
+    is_expanded = models.BooleanField(
+        'Раскрыт',
+        default=False,
+        help_text='True - узел раскрыт, False - узел свернут'
+    )
 
     class Meta:
         verbose_name = 'Объект организации'
         verbose_name_plural = 'Объекты организации'
+        ordering = ['parent__id', 'order', 'name']  # Сортировка по умолчанию
+
 
     def __str__(self):
         return f"{self.name} ({self.object_type.name})"
@@ -137,18 +145,95 @@ class StatusHistory(models.Model):
         ordering = ['-changed_at']
 
 
-class LicenseAttachment(models.Model):
-    """Прикрепленные файлы к лицензиям"""
-    license_object = models.ForeignKey(
+class ObjectAttachment(models.Model):
+    """Общие файлы для любых объектов"""
+    object = models.ForeignKey(
         OrganizationObject,
         on_delete=models.CASCADE,
-        related_name='attachments',
-        limit_choices_to={'object_type__name': 'Лицензия ПО'}
+        related_name='general_attachments'  # другое имя related_name
     )
-    file = models.FileField('Файл', upload_to='licenses/%Y/%m/')
+    file = models.FileField('Файл', upload_to='objects/%Y/%m/')
     name = models.CharField('Название', max_length=255)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Файл объекта'
+        verbose_name_plural = 'Файлы объектов'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def file_size(self):
+        """Размер файла в человеко-читаемом формате"""
+        if self.file:
+            size = self.file.size
+            for unit in ['B', 'KB', 'MB', 'GB']:
+                if size < 1024.0:
+                    return f"{size:.1f} {unit}"
+                size /= 1024.0
+        return '0 B'
+
+    @property
+    def file_extension(self):
+        """Расширение файла"""
+        if self.name:
+            return self.name.split('.')[-1].lower() if '.' in self.name else ''
+        return ''
+
+    @property
+    def is_previewable(self):
+        """Можно ли предпросмотреть файл в браузере"""
+        previewable_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'svg', 'txt', 'json']
+        return self.file_extension in previewable_extensions
+
+
+class LicenseAttachment(models.Model):
+    """Прикрепленные файлы к лицензиям (теперь для любых объектов)"""
+    license_object = models.ForeignKey(
+        OrganizationObject,
+        on_delete=models.CASCADE,
+        related_name='license_attachments'
+        # Убираем limit_choices_to!
+    )
+    file = models.FileField('Файл лицензии', upload_to='licenses/%Y/%m/')
+    name = models.CharField('Название', max_length=255)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Файл лицензии'
+        verbose_name_plural = 'Файлы лицензий'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def file_size(self):
+        """Размер файла в человеко-читаемом формате"""
+        if self.file:
+            size = self.file.size
+            for unit in ['B', 'KB', 'MB', 'GB']:
+                if size < 1024.0:
+                    return f"{size:.1f} {unit}"
+                size /= 1024.0
+        return '0 B'
+
+    @property
+    def file_extension(self):
+        """Расширение файла"""
+        if self.name:
+            return self.name.split('.')[-1].lower() if '.' in self.name else ''
+        return ''
+
+    @property
+    def is_previewable(self):
+        """Можно ли предпросмотреть файл в браузере"""
+        previewable_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'svg']
+        return self.file_extension in previewable_extensions
 
 
 class ObjectLicense(models.Model):

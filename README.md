@@ -57,4 +57,31 @@ poetry run python manage.py migrate
 
 После установки зависимостей ознакомьтесь с файлом README.md внутри проекта — в нём могут быть дополнительные инструкции по запуску и настройке.
 
-`poetry run python main.py`
+`poetry run python manage.py runserver`
+
+## 8. Создание суперпользователя через poetry
+
+`poetry run python manage.py createsuperuser`
+
+или с предустановленными данными
+
+`poetry run python manage.py createsuperuser --username admin`
+
+После успешного выполнения можно выполнить переход
+http://127.0.0.1:8000/admin/
+
+ввести данные суперпользователя и управлять проектом.
+
+## Иконки для элементов дерева
+
+Иконки берутся с сайта 
+
+[getbootstrap](https://getbootstrap.ru/docs/icons/)
+
+[bootstrap-icons@1.11.1](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/icons/)
+
+[icons.getbootstrap.com](https://icons.getbootstrap.com/)
+
+берется их название формата
+`bi bi-app`
+для иконки App

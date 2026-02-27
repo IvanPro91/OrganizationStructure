@@ -1,21 +1,15 @@
-# core/views_api.py
 import json
+import csv
+from datetime import timedelta
 
-import openpyxl
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from datetime import timedelta
 
-from openpyxl.styles import Font, PatternFill, Side, Alignment, Border
-from openpyxl.utils import get_column_letter
-
-from .models import OrganizationObject, ObjectType, ObjectField, ObjectFieldValue, StatusHistory, LicenseAttachment, \
-    ObjectLicense
-import csv
+from .models import OrganizationObject, ObjectType, ObjectFieldValue, StatusHistory, LicenseAttachment, ObjectAttachment
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -40,6 +34,9 @@ class TreeAPIView(LoginRequiredMixin, View):
 
     def get(self, request):
         def build_tree(obj):
+            # Сортируем детей по полю order
+            sorted_children = obj.children.all().order_by('order', 'name')
+
             return {
                 'id': obj.id,
                 'name': obj.name,
@@ -47,13 +44,43 @@ class TreeAPIView(LoginRequiredMixin, View):
                 'type_name': obj.object_type.name,
                 'icon': obj.object_type.icon,
                 'status': obj.status,
-                'children': [build_tree(child) for child in obj.children.all()]
+                'order': obj.order,
+                'is_expanded': obj.is_expanded,
+                'children': [build_tree(child) for child in sorted_children]
             }
 
-        roots = OrganizationObject.objects.filter(parent=None).select_related('object_type').prefetch_related(
-            'children')
+        # Сортируем корневые элементы
+        roots = OrganizationObject.objects.filter(
+            parent=None
+        ).select_related('object_type').prefetch_related('children').order_by('order', 'name')
+
         data = [build_tree(root) for root in roots]
         return JsonResponse(data, safe=False)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class TreeNodeStateAPIView(LoginRequiredMixin, View):
+    """API для сохранения состояния раскрытия узла"""
+
+    def post(self, request, pk):
+        try:
+            data = json.loads(request.body)
+            is_expanded = data.get('is_expanded', False)
+
+            obj = OrganizationObject.objects.get(pk=pk)
+            obj.is_expanded = is_expanded
+            obj.save(update_fields=['is_expanded'])
+
+            return JsonResponse({
+                'success': True,
+                'id': obj.id,
+                'is_expanded': obj.is_expanded
+            })
+
+        except OrganizationObject.DoesNotExist:
+            return JsonResponse({'error': 'Object not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -85,7 +112,6 @@ class CreateObjectAPIView(LoginRequiredMixin, View):
                     object=obj,
                     field=field
                 )
-                # Устанавливаем начальные значения
                 if field.field_type == 'checkbox':
                     field_value.value_boolean = False
                 elif field.field_type == 'number':
@@ -226,7 +252,6 @@ class UpdateObjectAPIView(LoginRequiredMixin, View):
                     )
 
             if 'parent_id' in data:
-                # Если parent_id приходит как строка 'null' или None
                 if data['parent_id'] in (None, 'null', ''):
                     obj.parent = None
                 else:
@@ -249,7 +274,6 @@ class UpdateObjectAPIView(LoginRequiredMixin, View):
                             field=field
                         )
 
-                    # Устанавливаем значение в зависимости от типа поля
                     val = data[field.name]
 
                     if field.field_type == 'number':
@@ -258,7 +282,7 @@ class UpdateObjectAPIView(LoginRequiredMixin, View):
                         value_obj.value_datetime = val if val else None
                     elif field.field_type == 'checkbox':
                         value_obj.value_boolean = bool(val) if val is not None else False
-                    else:  # text, textarea
+                    else:
                         value_obj.value_text = str(val) if val is not None else ''
 
                     value_obj.save()
@@ -275,31 +299,65 @@ class UpdateObjectAPIView(LoginRequiredMixin, View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class MoveObjectAPIView(LoginRequiredMixin, View):
-    """API для перемещения объекта"""
+    """API для перемещения объекта с сохранением позиции"""
 
     def post(self, request, pk):
         try:
             data = json.loads(request.body)
             parent_id = data.get('parent_id')
+            old_parent_id = data.get('old_parent_id')
+            new_position = data.get('position')
 
             obj = OrganizationObject.objects.get(pk=pk)
 
-            # Если parent_id = None, перемещаем в корень
-            if parent_id is None:
-                obj.parent = None
-                comment = 'Объект перемещен в корень'
+            if parent_id in (None, 'null', '#'):
+                parent_id = None
+            if old_parent_id in (None, 'null', '#'):
+                old_parent_id = None
+
+            if old_parent_id == parent_id:
+                siblings = list(OrganizationObject.objects.filter(
+                    parent_id=parent_id
+                ).exclude(id=obj.id).order_by('order', 'name', 'id'))
+
+                siblings.insert(new_position, obj)
+
+                for index, sibling in enumerate(siblings):
+                    if sibling.order != index:
+                        sibling.order = index
+                        sibling.save(update_fields=['order'])
+
+                comment = f'Изменен порядок в пределах {obj.parent.name if obj.parent else "корня"}'
             else:
-                # Проверяем, что целевой объект существует
-                try:
-                    target = OrganizationObject.objects.get(pk=parent_id)
-                    obj.parent = target
-                    comment = f'Объект перемещен в {target.name}'
-                except OrganizationObject.DoesNotExist:
-                    return JsonResponse({'error': 'Target object not found'}, status=404)
+                old_parent = obj.parent_id
 
-            obj.save()
+                if parent_id is None:
+                    obj.parent = None
+                    comment = 'Объект перемещен в корень'
+                else:
+                    try:
+                        target = OrganizationObject.objects.get(pk=parent_id)
+                        obj.parent = target
+                        comment = f'Объект перемещен в {target.name}'
+                    except OrganizationObject.DoesNotExist:
+                        return JsonResponse({'error': 'Target object not found'}, status=404)
 
-            # Запись в историю
+                obj.save()
+
+                if old_parent is not None:
+                    self.reorder_siblings(old_parent)
+
+                new_siblings = list(OrganizationObject.objects.filter(
+                    parent_id=parent_id
+                ).exclude(id=obj.id).order_by('order', 'name', 'id'))
+
+                new_siblings.insert(new_position, obj)
+
+                for index, sibling in enumerate(new_siblings):
+                    if sibling.order != index:
+                        sibling.order = index
+                        sibling.save(update_fields=['order'])
+
             StatusHistory.objects.create(
                 object=obj,
                 status=obj.status,
@@ -309,7 +367,8 @@ class MoveObjectAPIView(LoginRequiredMixin, View):
 
             return JsonResponse({
                 'status': 'moved',
-                'new_parent_id': parent_id
+                'new_parent_id': parent_id,
+                'new_position': new_position
             })
 
         except OrganizationObject.DoesNotExist:
@@ -318,6 +377,13 @@ class MoveObjectAPIView(LoginRequiredMixin, View):
             import traceback
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
+    def reorder_siblings(self, parent_id):
+        siblings = OrganizationObject.objects.filter(parent_id=parent_id).order_by('order', 'name', 'id')
+        for index, sibling in enumerate(siblings):
+            if sibling.order != index:
+                sibling.order = index
+                sibling.save(update_fields=['order'])
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -364,39 +430,49 @@ class ObjectHistoryAPIView(LoginRequiredMixin, View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ObjectAttachmentsAPIView(LoginRequiredMixin, View):
-    """API для получения файлов объекта"""
+    """API для получения общих файлов объекта"""
 
     def get(self, request, pk):
         try:
             obj = OrganizationObject.objects.get(pk=pk)
             attachments = []
-            for att in obj.attachments.all():
+
+            for att in obj.general_attachments.all():
                 attachments.append({
                     'id': att.id,
                     'name': att.name,
                     'size': att.file.size if att.file else 0,
-                    'uploaded_at': att.uploaded_at.strftime('%d.%m.%Y'),
+                    'size_formatted': att.file_size,
+                    'extension': att.file_extension,
+                    'is_previewable': att.is_previewable,
+                    'uploaded_at': att.uploaded_at.strftime('%d.%m.%Y %H:%M'),
                     'uploaded_by': att.uploaded_by.get_full_name() if att.uploaded_by else 'Неизвестно'
                 })
+
             return JsonResponse(attachments, safe=False)
+
         except OrganizationObject.DoesNotExist:
             return JsonResponse({'error': 'Object not found'}, status=404)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class UploadAttachmentAPIView(LoginRequiredMixin, View):
-    """API для загрузки файла"""
+class UploadObjectAttachmentAPIView(LoginRequiredMixin, View):
+    """API для загрузки общих файлов (для любых объектов)"""
 
     def post(self, request, pk):
         try:
             obj = OrganizationObject.objects.get(pk=pk)
-            file = request.FILES.get('file')
 
-            if not file:
+            if 'file' not in request.FILES:
                 return JsonResponse({'error': 'No file provided'}, status=400)
 
-            attachment = LicenseAttachment.objects.create(
-                license_object=obj,
+            file = request.FILES['file']
+
+            if file.size > 50 * 1024 * 1024:
+                return JsonResponse({'error': 'Файл слишком большой (максимум 50MB)'}, status=400)
+
+            attachment = ObjectAttachment.objects.create(
+                object=obj,
                 file=file,
                 name=file.name,
                 uploaded_by=request.user
@@ -405,6 +481,161 @@ class UploadAttachmentAPIView(LoginRequiredMixin, View):
             return JsonResponse({
                 'id': attachment.id,
                 'name': attachment.name,
+                'size': attachment.file.size,
+                'size_formatted': attachment.file_size,
+                'uploaded_at': attachment.uploaded_at.strftime('%d.%m.%Y %H:%M'),
+                'uploaded_by': attachment.uploaded_by.get_full_name() if attachment.uploaded_by else 'Неизвестно',
+                'is_previewable': attachment.is_previewable,
+                'extension': attachment.file_extension,
+                'status': 'uploaded'
+            })
+
+        except OrganizationObject.DoesNotExist:
+            return JsonResponse({'error': 'Object not found'}, status=404)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DownloadObjectAttachmentAPIView(LoginRequiredMixin, View):
+    """API для скачивания общих файлов"""
+
+    def get(self, request, pk):
+        try:
+            attachment = ObjectAttachment.objects.get(pk=pk)
+
+            if not attachment.file:
+                return JsonResponse({'error': 'File not found'}, status=404)
+
+            preview = request.GET.get('preview', 'false').lower() == 'true'
+
+            if preview and attachment.is_previewable:
+                response = FileResponse(attachment.file, content_type=self.get_content_type(attachment.file_extension))
+                response['Content-Disposition'] = f'inline; filename="{attachment.name}"'
+            else:
+                response = FileResponse(attachment.file, as_attachment=True)
+                response['Content-Disposition'] = f'attachment; filename="{attachment.name}"'
+
+            return response
+
+        except ObjectAttachment.DoesNotExist:
+            return JsonResponse({'error': 'Attachment not found'}, status=404)
+
+    def get_content_type(self, ext):
+        content_types = {
+            'pdf': 'application/pdf',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'svg': 'image/svg+xml',
+            'txt': 'text/plain',
+            'json': 'application/json',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls': 'application/vnd.ms-excel',
+            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'zip': 'application/zip',
+            'rar': 'application/x-rar-compressed',
+        }
+        return content_types.get(ext, 'application/octet-stream')
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DeleteObjectAttachmentAPIView(LoginRequiredMixin, View):
+    """API для удаления общих файлов"""
+
+    def delete(self, request, pk):
+        try:
+            attachment = ObjectAttachment.objects.get(pk=pk)
+
+            if attachment.file:
+                attachment.file.delete()
+
+            attachment.delete()
+            return JsonResponse({'status': 'deleted'})
+
+        except ObjectAttachment.DoesNotExist:
+            return JsonResponse({'error': 'Attachment not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class LicenseAttachmentsAPIView(LoginRequiredMixin, View):
+    """API для получения файлов лицензий"""
+
+    def get(self, request, pk):
+        try:
+            obj = OrganizationObject.objects.get(pk=pk)
+
+            attachments = []
+            for att in obj.license_attachments.all():
+                attachments.append({
+                    'id': att.id,
+                    'name': att.name,
+                    'size': att.file.size if att.file else 0,
+                    'size_formatted': att.file_size,
+                    'extension': att.file_extension,
+                    'is_previewable': att.is_previewable,
+                    'uploaded_at': att.uploaded_at.strftime('%d.%m.%Y %H:%M'),
+                    'uploaded_by': att.uploaded_by.get_full_name() if att.uploaded_by else 'Неизвестно'
+                })
+
+            return JsonResponse(attachments, safe=False)
+
+        except OrganizationObject.DoesNotExist:
+            return JsonResponse({'error': 'Object not found'}, status=404)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UploadLicenseAttachmentAPIView(LoginRequiredMixin, View):
+    """API для загрузки файлов лицензий (для любых объектов)"""
+
+    def post(self, request, pk):
+        try:
+            obj = OrganizationObject.objects.get(pk=pk)
+
+            # Убираем проверку типа объекта!
+            # if obj.object_type.name != 'Лицензия ПО':
+            #     return JsonResponse({
+            #         'error': 'Файлы лицензий можно прикреплять только к объектам типа "Лицензия ПО"'
+            #     }, status=400)
+
+            if 'file' not in request.FILES:
+                return JsonResponse({'error': 'No file provided'}, status=400)
+
+            file = request.FILES['file']
+
+            if file.size > 10 * 1024 * 1024:
+                return JsonResponse({'error': 'Файл слишком большой (максимум 10MB)'}, status=400)
+
+            # Проверка типа файла (оставляем, так как это специфика лицензий)
+            ext = file.name.split('.')[-1].lower()
+            allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif']
+            if ext not in allowed_extensions:
+                return JsonResponse({
+                    'error': f'Для лицензий разрешены только файлы: {", ".join(allowed_extensions)}'
+                }, status=400)
+
+            attachment = LicenseAttachment.objects.create(
+                license_object=obj,  # Здесь может быть любой объект!
+                file=file,
+                name=file.name,
+                uploaded_by=request.user
+            )
+
+            return JsonResponse({
+                'id': attachment.id,
+                'name': attachment.name,
+                'size': attachment.file.size,
+                'size_formatted': attachment.file_size,
+                'uploaded_at': attachment.uploaded_at.strftime('%d.%m.%Y %H:%M'),
+                'uploaded_by': attachment.uploaded_by.get_full_name() if attachment.uploaded_by else 'Неизвестно',
+                'is_previewable': attachment.is_previewable,
+                'extension': attachment.file_extension,
                 'status': 'uploaded'
             })
 
@@ -415,31 +646,61 @@ class UploadAttachmentAPIView(LoginRequiredMixin, View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class DownloadAttachmentAPIView(LoginRequiredMixin, View):
-    """API для скачивания файла"""
+class DownloadLicenseAttachmentAPIView(LoginRequiredMixin, View):
+    """API для скачивания файлов лицензий"""
 
     def get(self, request, pk):
         try:
             attachment = LicenseAttachment.objects.get(pk=pk)
-            response = FileResponse(attachment.file, as_attachment=True)
-            response['Content-Disposition'] = f'attachment; filename="{attachment.name}"'
+
+            if not attachment.file:
+                return JsonResponse({'error': 'File not found'}, status=404)
+
+            preview = request.GET.get('preview', 'false').lower() == 'true'
+
+            if preview and attachment.is_previewable:
+                response = FileResponse(attachment.file, content_type=self.get_content_type(attachment.file_extension))
+                response['Content-Disposition'] = f'inline; filename="{attachment.name}"'
+            else:
+                response = FileResponse(attachment.file, as_attachment=True)
+                response['Content-Disposition'] = f'attachment; filename="{attachment.name}"'
+
             return response
+
         except LicenseAttachment.DoesNotExist:
             return JsonResponse({'error': 'Attachment not found'}, status=404)
 
+    def get_content_type(self, ext):
+        content_types = {
+            'pdf': 'application/pdf',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'svg': 'image/svg+xml',
+            'txt': 'text/plain',
+        }
+        return content_types.get(ext, 'application/octet-stream')
+
 
 @method_decorator(csrf_exempt, name='dispatch')
-class DeleteAttachmentAPIView(LoginRequiredMixin, View):
-    """API для удаления файла"""
+class DeleteLicenseAttachmentAPIView(LoginRequiredMixin, View):
+    """API для удаления файлов лицензий"""
 
     def delete(self, request, pk):
         try:
             attachment = LicenseAttachment.objects.get(pk=pk)
-            attachment.file.delete()
+
+            if attachment.file:
+                attachment.file.delete()
+
             attachment.delete()
             return JsonResponse({'status': 'deleted'})
+
         except LicenseAttachment.DoesNotExist:
             return JsonResponse({'error': 'Attachment not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -452,21 +713,14 @@ class CheckExpiringAPIView(LoginRequiredMixin, View):
             now = timezone.now()
             expiry_limit = now + timedelta(days=days)
 
-            expiring = OrganizationObject.objects.filter(
-            ).values('id', 'name')
-
-            # Преобразуем даты в строки для JSON
+            expiring = OrganizationObject.objects.filter()
             result = []
             for item in expiring:
                 result.append({
-                    'id': item['id'],
-                    'name': item['name'],
-                    'expiry_date': item['expiry_date'].isoformat() if item['expiry_date'] else None,
-                    'days_left': (item['expiry_date'] - now).days if item['expiry_date'] else None
+                    'id': item.id,
+                    'name': item.name,
                 })
-
             return JsonResponse(result, safe=False)
-
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
@@ -478,11 +732,10 @@ class ExportDataAPIView(LoginRequiredMixin, View):
     def get(self, request):
         response = HttpResponse(content_type='text/csv; charset=utf-8')
         response['Content-Disposition'] = 'attachment; filename="objects_export.csv"'
-        response.write('\ufeff')  # Добавляем BOM для UTF-8 в Excel
+        response.write('\ufeff')
 
         writer = csv.writer(response)
-        writer.writerow(
-            ['ID', 'Название', 'Тип', 'Статус', 'Родитель', 'Дата создания', 'Дата обновления'])
+        writer.writerow(['ID', 'Название', 'Тип', 'Статус', 'Родитель', 'Дата создания', 'Дата обновления'])
 
         for obj in OrganizationObject.objects.all().select_related('object_type', 'parent'):
             writer.writerow([
