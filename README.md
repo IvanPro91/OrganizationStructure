@@ -48,10 +48,10 @@ Poetry — это инструмент для управления зависи�
 ## 6. Миграции
 
 Скорее всего, команды будут такими:
-`
-poetry run python manage.py makemigrations
-poetry run python manage.py migrate
-`
+
+`poetry run python manage.py makemigrations`
+
+`poetry run python manage.py migrate`
 
 ## 7. Запуск проекта
 
