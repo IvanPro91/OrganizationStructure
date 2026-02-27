@@ -9,7 +9,7 @@ from .views_api import (
     ObjectLicensesAPIView, ObjectHistoryAPIView,
     ObjectAttachmentsAPIView, UploadAttachmentAPIView,
     DownloadAttachmentAPIView, DeleteAttachmentAPIView,
-    ExportDataAPIView
+    ExportDataAPIView, TreeNodeStateAPIView
 )
 
 app_name = 'core'
@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/object/<int:pk>/upload/', UploadAttachmentAPIView.as_view(), name='api-object-upload'),
     path('api/attachment/<int:pk>/download/', DownloadAttachmentAPIView.as_view(), name='api-attachment-download'),
     path('api/attachment/<int:pk>/delete/', DeleteAttachmentAPIView.as_view(), name='api-attachment-delete'),
+    path('api/object/<int:pk>/toggle-expand/', TreeNodeStateAPIView.as_view(), name='toggle-expand'),
 
     # Инструменты
     path('api/check-expiring/', CheckExpiringAPIView.as_view(), name='api-check-expiring'),

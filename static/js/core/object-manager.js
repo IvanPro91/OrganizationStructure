@@ -59,57 +59,53 @@ class ObjectManager {
 
     // ========== МЕТОД ПРЕОБРАЗОВАНИЯ ДАННЫХ ==========
     convertToJsTreeFormat(data) {
-        const convertNode = (node) => {
-            // Определяем иконку в зависимости от типа
-            let icon = node.icon || 'bi-folder';
+    const convertNode = (node) => {
+        // Определяем иконку в зависимости от типа
+        let icon = node.icon || 'bi-folder';
+        if (icon && !icon.startsWith('bi ')) {
+            icon = 'bi ' + icon;
+        }
 
-            // Если иконка приходит без префикса 'bi ', добавляем его
-            if (icon && !icon.startsWith('bi ')) {
-                icon = 'bi ' + icon;
-            }
-
-            return {
-                id: node.id.toString(),
-                text: node.name,
+        return {
+            id: node.id.toString(),
+            text: node.name,
+            icon: icon,
+            type: node.type_name,
+            state: {
+                opened: node.is_expanded || false,  // Используем is_expanded из БД
+                selected: false,
+                disabled: false
+            },
+            li_attr: {
+                'data-type-id': node.type_id,
+                'data-type-name': node.type_name,
+                'data-status': node.status,
+                'data-expanded': node.is_expanded || false
+            },
+            a_attr: {
+                'href': '#',
+                'data-id': node.id
+            },
+            original: {
+                id: node.id,
+                name: node.name,
+                type_id: node.type_id,
+                type_name: node.type_name,
                 icon: icon,
-                type: node.type_name,
-                state: {
-                    opened: false,  // узлы по умолчанию свернуты
-                    selected: false,
-                    disabled: false
-                },
-                li_attr: {
-                    'data-type-id': node.type_id,
-                    'data-type-name': node.type_name,
-                    'data-status': node.status
-                },
-                a_attr: {
-                    'href': '#',
-                    'data-id': node.id
-                },
-                original: {
-                    id: node.id,
-                    name: node.name,
-                    type_id: node.type_id,
-                    type_name: node.type_name,
-                    icon: icon,
-                    status: node.status
-                },
-                children: node.children && node.children.length > 0
-                    ? node.children.map(child => convertNode(child))
-                    : []
+                status: node.status,
+                is_expanded: node.is_expanded || false
+            },
+            children: node.children && node.children.length > 0
+                ? node.children.map(child => convertNode(child))
+                : []
             };
         };
 
-        // Если data - массив, преобразуем каждый элемент
         if (Array.isArray(data)) {
             return data.map(node => convertNode(node));
-        }
-        // Если data - одиночный объект, преобразуем его и возвращаем массив
-        else if (data && typeof data === 'object') {
+        } else if (data && typeof data === 'object') {
             return [convertNode(data)];
         }
-        // Если данные некорректны, возвращаем пустой массив
         return [];
     }
 
@@ -178,22 +174,52 @@ class ObjectManager {
     initTreeEvents() {
         // Обработка готовности дерева
         $('#treeContainer').on('ready.jstree', (e, data) => {
-    this.treeInstance = data.instance;
-    console.log('jsTree ready, instance:', this.treeInstance);
+            this.treeInstance = data.instance;
+            console.log('jsTree ready');
 
-    // Разворачиваем первый уровень для наглядности
-    this.treeInstance.open_all();
+            // Получаем все узлы
+            const allNodes = this.treeInstance.get_json('#', { flat: true });
+            console.log('All nodes with states:', allNodes.map(n => ({
+                id: n.id,
+                text: n.text,
+                opened: n.state.opened
+            })));
+        });
 
-    // Получаем все узлы правильно
-    const allNodes = this.treeInstance.get_json('#', { flat: true });
-    console.log('All nodes:', allNodes);
+        // Обработка открытия узла
+        $('#treeContainer').on('open_node.jstree', (e, data) => {
+            const nodeId = data.node.id;
+            console.log('Node opened:', nodeId);
 
-    // Выбираем первый узел если есть
-    if (allNodes && allNodes.length > 0) {
-        const firstNodeId = allNodes[0].id;
-        this.treeInstance.select_node(firstNodeId);
-    }
-});
+            // Отправляем на сервер, что узел раскрыт
+            $.ajax({
+                url: `/api/object/${nodeId}/toggle-expand/`,
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.csrfToken,
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({ is_expanded: true })
+            });
+        });
+
+        // Обработка закрытия узла
+        $('#treeContainer').on('close_node.jstree', (e, data) => {
+            const nodeId = data.node.id;
+            console.log('Node closed:', nodeId);
+
+            // Отправляем на сервер, что узел свернут
+            $.ajax({
+                url: `/api/object/${nodeId}/toggle-expand/`,
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.csrfToken,
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({ is_expanded: false })
+            });
+        });
+
 
         // Обработка выбора узла
         $('#treeContainer').on('select_node.jstree', (e, data) => {
@@ -222,9 +248,13 @@ class ObjectManager {
 
             const nodeId = data.node.id;
             const newParentId = data.parent;
+            const oldParentId = data.old_parent;
+            const position = data.position;
 
             // Если новый родитель '#', значит перемещаем в корень
             const targetId = newParentId === '#' ? null : newParentId;
+            const oldParent = oldParentId === '#' ? null : oldParentId;
+
 
             $.ajax({
                 url: `/api/object/${nodeId}/move/`,
@@ -234,16 +264,20 @@ class ObjectManager {
                     'Content-Type': 'application/json'
                 },
                 data: JSON.stringify({
-                    parent_id: targetId  // Отправляем null для корневого
+                    parent_id: targetId,
+                    old_parent_id: oldParent,
+                    position: position
                 }),
                 success: (response) => {
                     this.showToast('Объект перемещен');
+                    // Принудительно обновляем дерево, чтобы получить правильный порядок
+                    this.treeInstance.refresh();
                 },
                 error: (xhr) => {
                     this.showToast(xhr.responseJSON?.error || 'Ошибка перемещения', true);
                     // Откатываем перемещение в дереве
                     this.treeInstance.refresh();
-                }
+                },
             });
         });
     }
@@ -278,10 +312,6 @@ class ObjectManager {
                     this.contextTargetId = node.id;
                     this.showTransferModal();
                 }
-            },
-            'Separator': {
-                'separator_before': true,
-                'separator_after': false
             },
             'Delete': {
                 'label': 'Удалить',

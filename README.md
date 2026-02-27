@@ -75,8 +75,11 @@ http://127.0.0.1:8000/admin/
 ## Иконки для элементов дерева
 
 Иконки берутся с сайта 
+
 [getbootstrap](https://getbootstrap.ru/docs/icons/)
+
 [bootstrap-icons@1.11.1](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/icons/)
+
 [icons.getbootstrap.com](https://icons.getbootstrap.com/)
 
 берется их название формата
